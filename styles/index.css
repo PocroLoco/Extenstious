@@ -549,3 +549,70 @@ body.modalopen {
 		color: #C4B5FD;
 	}
 }
+
+/* Drag extensions into / out of profiles */
+body.dragging, body.dragging * {
+	cursor: grabbing !important;
+}
+
+body.dragging section#content ul li:hover {
+	background-color: transparent;
+	box-shadow: none;
+}
+
+section#content li.drag-source {
+	opacity: .35;
+}
+
+body.dragging section#content li.profile.drop-target {
+	background-color: rgba(124,58,237,.12);
+	box-shadow: inset 0 0 0 2px #7C3AED;
+	border-radius: 5px;
+}
+
+section#content li.profile.dropped {
+	animation: profile-dropped .7s ease-out;
+}
+
+@keyframes profile-dropped {
+	from { background-color: rgba(124,58,237,.30); }
+	to   { background-color: transparent; }
+}
+
+.drag-bubble {
+	position: fixed;
+	z-index: 200;
+	pointer-events: none;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px 4px 6px;
+	border-radius: 999px;
+	font-size: 11.5px;
+	font-weight: bold;
+	white-space: nowrap;
+	color: #fff;
+	background-color: #555;
+	box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+
+.drag-bubble img {
+	width: 14px;
+	height: 14px;
+}
+
+.drag-bubble.add {
+	background-color: #7C3AED;
+}
+
+.drag-bubble.remove {
+	background-color: #d93025;
+}
+
+.drag-bubble.already {
+	background-color: #777;
+}
+
+section#content img {
+	-webkit-user-drag: none;
+}

@@ -5,6 +5,7 @@ A fork of [Extensity](https://github.com/sergiokas/Extensity) by Sergio Kaszczys
 **What's different:**
 - Each profile in the popup shows how many extensions it has, with an arrow to show/hide the list (remembers what you left open).
 - A **+** on the Profiles bar creates a new profile right in the popup — pick a name and the extensions, done.
+- Drag an extension from the list onto a profile to add it ("Add to Sales"), or drag it out of a profile's list to remove it ("Remove from Sales"). If that profile is the one that's on, the extension gets turned on/off to match.
 - New look: violet color scheme and a new icon.
 
 To install: download/clone this repo, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick this folder.

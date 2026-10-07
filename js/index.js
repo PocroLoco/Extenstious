@@ -288,6 +288,7 @@ document.addEventListener("DOMContentLoaded", function() {
     vm = new ExtensityViewModel();
     ko.bindingProvider.instance = new ko.secureBindingsProvider({});
     ko.applyBindings(vm, document.body);
+    setupProfileDragAndDrop(vm); // Extenstious: drag extensions into/out of profiles
   });
 
   // Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912
