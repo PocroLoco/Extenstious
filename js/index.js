@@ -48,6 +48,83 @@ document.addEventListener("DOMContentLoaded", function() {
 
   };
 
+  // Extenstious: in-popup "New profile" dialog.
+  var NewProfileViewModel = function(root) {
+    var self = this;
+
+    self.isOpen = ko.observable(false);
+    self.name = ko.observable("");
+    self.selected = ko.observableArray();
+    self.error = ko.observable("");
+    self.focusName = ko.observable(false);
+
+    self.selectedCount = ko.pureComputed(function() {
+      var n = self.selected().length;
+      return "(" + n + " selected)";
+    });
+
+    self.open = function() {
+      self.name("");
+      self.error("");
+      // Start from whatever is turned on right now, same as the Profiles page does.
+      self.selected(root.exts.enabled.pluck().slice());
+      self.isOpen(true);
+      self.focusName(true);
+    };
+
+    self.close = function() {
+      self.isOpen(false);
+    };
+
+    self.selectAll = function() {
+      self.selected(root.exts.extensions.pluck().slice());
+    };
+
+    self.selectNone = function() {
+      self.selected([]);
+    };
+
+    self.create = function() {
+      var n = (self.name() || "").trim();
+      if(!n) {
+        self.error("Give it a name first.");
+        self.focusName(true);
+        return;
+      }
+      if(n.startsWith("__")) {
+        self.error("Names can't start with two underscores.");
+        return;
+      }
+      var taken = _(root.profiles.items()).some(function(p) {
+        return p.name().toUpperCase() == n.toUpperCase();
+      });
+      if(taken) {
+        self.error("You already have a profile called \"" + n + "\".");
+        return;
+      }
+
+      root.profiles.add(n, _(self.selected()).uniq());
+      // Keep the list in the same order it loads in (reserved first, then A-Z).
+      root.profiles.items.sort(function(a, b) {
+        var ka = (a.name().startsWith("__") ? " " : "") + a.name().toUpperCase();
+        var kb = (b.name().startsWith("__") ? " " : "") + b.name().toUpperCase();
+        return ka < kb ? -1 : (ka > kb ? 1 : 0);
+      });
+      root.profiles.save(function() {});
+      // Show the new profile opened so you can see what's in it.
+      if(!_(root.expandedProfiles()).contains(n)) root.expandedProfiles.push(n);
+      self.close();
+    };
+
+    // Esc closes the dialog.
+    document.addEventListener("keydown", function(e) {
+      if(e.key === "Escape" && self.isOpen()) {
+        e.preventDefault();
+        self.close();
+      }
+    });
+  };
+
   var ExtensityViewModel = function() {
     var self = this;
 
@@ -116,6 +193,17 @@ document.addEventListener("DOMContentLoaded", function() {
         .filter(filterFn);
     }).extend({countable: null});
 
+    // Extenstious: which profiles have their extension list open (remembered).
+    self.expandedProfiles = ko.observableArray().extend({persistable: "expandedProfiles"});
+
+    self.toggleExpanded = function(p) {
+      if(_(self.expandedProfiles()).contains(p.name())) {
+        self.expandedProfiles.remove(p.name());
+      } else {
+        self.expandedProfiles.push(p.name());
+      }
+    };
+
     // Extenstious: give each profile a sorted list of the installed
     // extensions/apps it contains, so the popup can show them under the profile.
     var withExtensions = function(p) {
@@ -126,6 +214,12 @@ document.addEventListener("DOMContentLoaded", function() {
             .compact() // skip extensions that were uninstalled
             .sortBy(nameSortFn)
             .value();
+        });
+        p.count = ko.pureComputed(function() {
+          return p.extensions().length;
+        });
+        p.expanded = ko.pureComputed(function() {
+          return _(self.expandedProfiles()).contains(p.name());
         });
       }
       return p;
@@ -146,6 +240,9 @@ document.addEventListener("DOMContentLoaded", function() {
         .sortBy(statusSortFn)
         .value();
     }).extend({countable: null});
+
+    // Extenstious: "+" on the Profiles bar opens this small create-profile dialog.
+    self.newProfile = new NewProfileViewModel(self);
 
     self.emptyItems = ko.pureComputed(function() {
       return self.listedApps.none() && self.listedExtensions.none();

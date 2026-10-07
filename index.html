@@ -13,7 +13,7 @@
 <script type="text/javascript" src="js/engine.js"></script>
 <script type="text/javascript" src="js/index.js"></script>
 </head>
-<body>
+<body data-sbind="css: {modalopen: newProfile.isOpen}">
 <section id="header" class="main" data-sbind="if: opts.showHeader">
 	<h1>
 		<a id="title" href="https://chrome.google.com/webstore/detail/jjmflmamggggndanpgfnpelongoepncg" target="_blank"><img src="images/icon48.png" width="16px" height="16px" />&nbsp;Extenstious</a>
@@ -42,17 +42,27 @@
 <section id="content" class="main">
 
 	<!-- Profiles -->
-	<section id="profiles" data-sbind="if: listedProfiles.any, visible: !search.q">
-		<h1>Profiles</h1>
+	<section id="profiles" data-sbind="visible: !search.q">
+		<h1 class="has-action">Profiles
+			<a href="#" class="add-profile" title="New profile" data-sbind="click: newProfile.open"><i class="fa fa-plus"></i></a>
+		</h1>
+		<p class="no-profiles" data-sbind="visible: listedProfiles.none">No profiles yet. Hit <i class="fa fa-plus"></i> to make one.</p>
 		<ul data-sbind="foreach: listedProfiles">
-			<li class="app" data-sbind="click: $parent.setProfile">
-				<i class="fa fa-check" alt="active" data-sbind="visible: name() == $parent.activeProfile()"></i>
-				<i class="fa fa-lightbulb-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__always_on'"></i>
-				<i class="fa fa-star" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__favorites'"></i>
-				<i class="fa fa-user-circle-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && !reserved()"></i>
-				<span data-sbind="text: short_name"></span>
+			<li class="app profile" data-sbind="click: $parent.setProfile">
+				<div class="profile-row">
+					<i class="fa fa-check" alt="active" data-sbind="visible: name() == $parent.activeProfile()"></i>
+					<i class="fa fa-lightbulb-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__always_on'"></i>
+					<i class="fa fa-star" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__favorites'"></i>
+					<i class="fa fa-user-circle-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && !reserved()"></i>
+					<span class="profile-name" data-sbind="text: short_name"></span>
+					<!-- Extenstious: show/hide this profile's extensions -->
+					<a href="#" class="profile-toggle" title="Show/hide extensions" data-sbind="click: $parent.toggleExpanded, clickBubble: false, css: {open: expanded}">
+						<span class="count" data-sbind="text: count"></span>
+						<i class="fa fa-chevron-down"></i>
+					</a>
+				</div>
 				<!-- Extenstious: extensions in this profile -->
-				<ul class="profile-items" data-sbind="foreach: extensions">
+				<ul class="profile-items" data-sbind="visible: expanded, foreach: extensions">
 					<li><img width="14px" height="14px" data-sbind="attr:{src:icon}" /> <span data-sbind="text: short_name"></span></li>
 				</ul>
 			</li>
@@ -92,6 +102,33 @@
 		<p class="empty"><i class="fa fa-exclamation-triangle"></i><br />No Extensions or Apps found.</p>
 	</section>
 </section>
+
+<!-- Extenstious: create a profile without leaving the popup -->
+<!-- ko if: newProfile.isOpen -->
+<div class="modal-layer">
+	<div class="modal-backdrop" data-sbind="click: newProfile.close"></div>
+	<form class="modal" data-sbind="submit: newProfile.create">
+		<h2>New profile</h2>
+		<input type="text" class="profile-name-input" maxlength="40" placeholder="Name it, e.g. Sales" data-sbind="textInput: newProfile.name, hasFocus: newProfile.focusName" />
+		<p class="modal-error" data-sbind="visible: newProfile.error, text: newProfile.error"></p>
+		<div class="pick-header">
+			<span>Extensions <small data-sbind="text: newProfile.selectedCount"></small></span>
+			<span><a href="#" data-sbind="click: newProfile.selectAll">All</a> &middot; <a href="#" data-sbind="click: newProfile.selectNone">None</a></span>
+		</div>
+		<ul class="pick-list" data-sbind="foreach: exts.extensions">
+			<li><label>
+				<input type="checkbox" data-sbind="value: id, checked: $parent.newProfile.selected" />
+				<img width="16px" height="16px" data-sbind="attr:{src:icon}" />
+				<span data-sbind="text: short_name"></span>
+			</label></li>
+		</ul>
+		<div class="modal-actions">
+			<button type="button" class="btn ghost" data-sbind="click: newProfile.close">Cancel</button>
+			<button type="submit" class="btn primary">Create</button>
+		</div>
+	</form>
+</div>
+<!-- /ko -->
 
 <!-- Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912 -->
 <div id="workaround-307912" style="display: none; height: 1px;"></div>

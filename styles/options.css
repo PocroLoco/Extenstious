@@ -27,7 +27,7 @@ body {
 		color: #ccc;
 	}
 	#header .help {
-		background-color: #516C97;
+		background-color: #7C3AED;
 	}	
 	#profiles .sidebar ul.items li.active {
 		background-color: #777;
@@ -51,19 +51,19 @@ body {
 		color: black;
 	}
 	.blue {
-		color: #516C97;
+		color: #7C3AED;
 	}
 	h1 {
-		color: #516C97;
+		color: #7C3AED;
 	}
 	fieldset legend {
-		color: #516C97;
+		color: #7C3AED;
 	}
 	a {
-		color: #516C97;
+		color: #7C3AED;
 	}
 	span#save-result {
-		color: #304669;
+		color: #5B21B6;
 	}
 	fieldset#options .field label {
 		color: black;
@@ -115,7 +115,7 @@ fieldset legend {
 	float: left;
 	clear: left;
 	padding: 10px 3px;
-	border-bottom: 1px solid #304669;
+	border-bottom: 1px solid #5B21B6;
 	font-weight: bold;
 }
 
@@ -135,8 +135,8 @@ button {
 	font-size: 1em;
 	font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;
 	color: #ffffff;
-	background-color: #516C97;
-	border-color: #516C97;
+	background-color: #7C3AED;
+	border-color: #7C3AED;
 	border-width: 1px;
 	border-style: solid;
 	border-radius: 5px;
@@ -184,9 +184,9 @@ a:hover {
 	cursor: pointer;
 	font-weight: bold;
 	font-size: 1em;
-	color: #516C97;
+	color: #7C3AED;
 	background-color: #fff;
-	border: 1px solid #516C97;
+	border: 1px solid #7C3AED;
 	border-radius: 5px;
 	padding: 5px 10px;
 }
@@ -194,7 +194,7 @@ a:hover {
 	text-decoration: none;
 }
 #header #menu a.selected {
-	background-color: #516C97;
+	background-color: #7C3AED;
 	color: white;
 }
 

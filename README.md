@@ -2,7 +2,10 @@
 
 A fork of [Extensity](https://github.com/sergiokas/Extensity) by Sergio Kaszczyszyn.
 
-**What's different:** the popup now lists the extensions that belong to each profile right under the profile name, so you can see what a profile turns on without opening the Profiles page or switching to it.
+**What's different:**
+- Each profile in the popup shows how many extensions it has, with an arrow to show/hide the list (remembers what you left open).
+- A **+** on the Profiles bar creates a new profile right in the popup — pick a name and the extensions, done.
+- New look: violet color scheme and a new icon.
 
 To install: download/clone this repo, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick this folder.
 
