@@ -217,6 +217,27 @@ section#profiles i.fa {
 	text-align: center;
 }
 
+/* Extenstious: extensions listed under each profile */
+section#content ul.profile-items {
+	margin: 2px 0 1px 17px;
+	padding-left: 6px;
+	border-left: 2px solid rgba(127,127,127,.25);
+}
+
+section#content ul.profile-items li,
+section#content ul.profile-items li:hover {
+	padding: 1px 0;
+	font-size: .92em;
+	opacity: .75;
+	background: none;
+	box-shadow: none;
+	text-shadow: none;
+}
+
+section#content ul.profile-items li img {
+	margin-right: 2px;
+}
+
 /* Content */
 section#content {
 	margin-bottom: .5em;

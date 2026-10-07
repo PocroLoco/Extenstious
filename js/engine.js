@@ -340,7 +340,7 @@ var ExtensionCollectionModel = function() {
     _(results).chain()
       .sortBy(function(i) { return i.name.toUpperCase(); })
       .each(function(i){
-        if (i.name != "Extensity" && i.type != 'theme') {
+        if (i.id != chrome.runtime.id && i.type != 'theme') { // hide ourselves (by id, so renaming is safe)
           self.items.push(new ExtensionModel(i));
         }
       });

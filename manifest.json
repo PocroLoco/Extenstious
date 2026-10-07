@@ -1,8 +1,8 @@
 {
-  "name": "Extensity",
-  "version": "1.14.0",
+  "name": "Extenstious",
+  "version": "1.14.0.1",
   "manifest_version": 3,
-  "description": "Quickly enable/disable Google Chrome extensions",
+  "description": "Quickly enable/disable Chrome extensions, and see what is in each profile. Fork of Extensity.",
   "options_page": "options.html",
   "icons" : {
     "16" : "images/icon16.png",
@@ -11,7 +11,7 @@
   },
   "action": {
     "default_icon": "images/iconbar.png",
-    "default_title": "Extensity",
+    "default_title": "Extenstious",
     "default_popup": "index.html"
   },
   "background": {

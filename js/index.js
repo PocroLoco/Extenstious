@@ -116,9 +116,26 @@ document.addEventListener("DOMContentLoaded", function() {
         .filter(filterFn);
     }).extend({countable: null});
 
+    // Extenstious: give each profile a sorted list of the installed
+    // extensions/apps it contains, so the popup can show them under the profile.
+    var withExtensions = function(p) {
+      if(!p.extensions) {
+        p.extensions = ko.pureComputed(function() {
+          return _(p.items()).chain()
+            .map(function(id) { return self.exts.find(id); })
+            .compact() // skip extensions that were uninstalled
+            .sortBy(nameSortFn)
+            .value();
+        });
+      }
+      return p;
+    };
+
     self.listedProfiles = ko.computed(function() {
-      return _(self.profiles.items())
-        .filter(filterProfileFn);
+      return _(self.profiles.items()).chain()
+        .filter(filterProfileFn)
+        .map(withExtensions)
+        .value();
     }).extend({countable: null});
 
     self.listedFavorites = ko.computed(function() {

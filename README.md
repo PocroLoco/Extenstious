@@ -1,3 +1,15 @@
+## Extenstious
+
+A fork of [Extensity](https://github.com/sergiokas/Extensity) by Sergio Kaszczyszyn.
+
+**What's different:** the popup now lists the extensions that belong to each profile right under the profile name, so you can see what a profile turns on without opening the Profiles page or switching to it.
+
+To install: download/clone this repo, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick this folder.
+
+Original Extensity README below.
+
+---
+
 ## Extensity
 
 ### Quickly enable/disable Google Chrome extensions

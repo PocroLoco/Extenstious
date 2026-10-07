@@ -2,7 +2,7 @@
 <html>
 <head>
 <!-- Includes -->
-<title>Extensity</title>
+<title>Extenstious</title>
 <link rel="stylesheet" type="text/css" href="styles/normalize.css" />
 <link rel="stylesheet" type="text/css" href="styles/font-awesome.min.css" />
 <link rel="stylesheet" type="text/css" href="styles/index.css" />
@@ -16,7 +16,7 @@
 <body>
 <section id="header" class="main" data-sbind="if: opts.showHeader">
 	<h1>
-		<a id="title" href="https://chrome.google.com/webstore/detail/jjmflmamggggndanpgfnpelongoepncg" target="_blank"><img src="images/icon48.png" width="16px" height="16px" />&nbsp;Extensity</a>
+		<a id="title" href="https://chrome.google.com/webstore/detail/jjmflmamggggndanpgfnpelongoepncg" target="_blank"><img src="images/icon48.png" width="16px" height="16px" />&nbsp;Extenstious</a>
 
 		<!-- Actions -->
 		<a href="https://chrome.google.com/webstore/detail/extensity/jjmflmamggggndanpgfnpelongoepncg/reviews" class="page" target="_blank"><i class="fa fa-star" alt="Rate Extensity. Thanks!" title="Rate Extensity. Thanks!"></i></a>
@@ -25,7 +25,7 @@
 
 		<a href="http://twitter.com/share?url=https://chrome.google.com/webstore/detail/jjmflmamggggndanpgfnpelongoepncg&via=ExtensityChrome&text=Keep control of your Chrome extensions with Extensity. Quickly enable/disable any extension!" class="page" target="_blank"><i class="fa fa-twitter" alt="Share Extensity. Thanks!" title="Share Extensity on Twitter. Thanks!"/></i></a>
 
-		<a href="options.html" class="page" target="_blank"><i class="fa fa-cog" alt="Extensity options" title="Extensity options"></i></a>
+		<a href="options.html" class="page" target="_blank"><i class="fa fa-cog" alt="Extenstious options" title="Extenstious options"></i></a>
 
 		<a href="profiles.html" class="page" target="_blank"><i class="fa fa-user-circle-o" alt="Profiles" title="Profiles"></i></a>
 
@@ -51,6 +51,10 @@
 				<i class="fa fa-star" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__favorites'"></i>
 				<i class="fa fa-user-circle-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && !reserved()"></i>
 				<span data-sbind="text: short_name"></span>
+				<!-- Extenstious: extensions in this profile -->
+				<ul class="profile-items" data-sbind="foreach: extensions">
+					<li><img width="14px" height="14px" data-sbind="attr:{src:icon}" /> <span data-sbind="text: short_name"></span></li>
+				</ul>
 			</li>
 		</ul>
 	</section>
