@@ -219,23 +219,64 @@ section#profiles i.fa {
 
 /* Extensious: extensions listed under each profile */
 section#content ul.profile-items {
-	margin: 2px 0 1px 17px;
-	padding-left: 6px;
+	margin: 1px 0 3px 17px;
+	padding-left: 4px;
 	border-left: 2px solid rgba(127,127,127,.25);
 }
 
-section#content ul.profile-items li,
-section#content ul.profile-items li:hover {
-	padding: 1px 0;
+section#content ul.profile-items li {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 4px;
 	font-size: .92em;
-	opacity: .75;
+	opacity: .8;
+	white-space: nowrap;
+	border-radius: 3px;
+}
+
+/* Long names get "..." instead of wrapping onto a second line */
+section#content ul.profile-items li span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+section#content ul.profile-items li img {
+	flex-shrink: 0;
+}
+
+/* Hovering a profile highlights only the row under the mouse
+   (the profile's own row, or one extension in its list), not the whole block. */
+section#content li.profile {
+	padding: 0;
+}
+
+section#content ul li.profile:hover {
 	background: none;
 	box-shadow: none;
 	text-shadow: none;
 }
 
-section#content ul.profile-items li img {
-	margin-right: 2px;
+section#content li.profile .profile-row {
+	padding: 3px 2px;
+	border-radius: 2px;
+}
+
+section#content li.profile .profile-row:hover,
+section#content ul.profile-items li:hover {
+	opacity: 1;
+	background-color: #e0e0e0;
+	box-shadow: 0px 0px 15px rgba(0,0,0,.2) inset;
+	text-shadow: 0 1px 0 white;
+}
+
+@media (prefers-color-scheme: dark) {
+	section#content li.profile .profile-row:hover,
+	section#content ul.profile-items li:hover {
+		background-color: #777;
+		text-shadow: 0 1px 0 black;
+	}
 }
 
 /* Content */
@@ -555,7 +596,9 @@ body.dragging, body.dragging * {
 	cursor: grabbing !important;
 }
 
-body.dragging section#content ul li:hover {
+body.dragging section#content ul li:hover,
+body.dragging section#content li.profile .profile-row:hover,
+body.dragging section#content ul.profile-items li:hover {
 	background-color: transparent;
 	box-shadow: none;
 }
