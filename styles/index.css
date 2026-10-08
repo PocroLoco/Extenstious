@@ -271,9 +271,26 @@ section#content ul.profile-items li:hover {
 	text-shadow: 0 1px 0 white;
 }
 
+/* Extensions under a profile that are currently off look dimmed */
+section#content ul.profile-items li.disabled {
+	opacity: .45;
+	background-color: transparent;
+}
+
+section#content ul.profile-items li.disabled img {
+	opacity: 1;
+	filter: grayscale(1);
+}
+
+section#content ul.profile-items li.disabled:hover {
+	opacity: .75;
+	background-color: #e0e0e0;
+}
+
 @media (prefers-color-scheme: dark) {
 	section#content li.profile .profile-row:hover,
-	section#content ul.profile-items li:hover {
+	section#content ul.profile-items li:hover,
+	section#content ul.profile-items li.disabled:hover {
 		background-color: #777;
 		text-shadow: 0 1px 0 black;
 	}

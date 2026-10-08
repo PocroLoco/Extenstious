@@ -64,7 +64,7 @@
 				</div>
 				<!-- Extensious: extensions in this profile -->
 				<ul class="profile-items" data-sbind="visible: expanded, foreach: extensions">
-					<li><img width="14px" height="14px" data-sbind="attr:{src:icon}" /> <span data-sbind="text: short_name"></span></li>
+					<li data-sbind="click: $parent.toggleItem, clickBubble: false, css: {disabled: disabled}"><img width="14px" height="14px" data-sbind="attr:{src:icon}" /> <span data-sbind="text: short_name"></span></li>
 				</ul>
 			</li>
 		</ul>

@@ -221,6 +221,11 @@ document.addEventListener("DOMContentLoaded", function() {
         p.expanded = ko.pureComputed(function() {
           return _(self.expandedProfiles()).contains(p.name());
         });
+        // Clicking an extension under a profile turns just that extension
+        // on/off (same as in the main list), instead of switching profiles.
+        p.toggleItem = function(ext) {
+          self.toggleExtension(ext);
+        };
       }
       return p;
     };
