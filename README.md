@@ -1,4 +1,4 @@
-## Extenstious
+## Extentious
 
 A fork of [Extensity](https://github.com/sergiokas/Extensity) by Sergio Kaszczyszyn.
 
