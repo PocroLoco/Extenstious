@@ -90,8 +90,10 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     var initialSelected = [];
+    var prevUndo = null; // what Cmd+Z did before you opened the dialog
 
     var show = function(draft) {
+      prevUndo = root.lastUndo;
       self.name(draft.name || "");
       self.error("");
       self.query(draft.query || "");
@@ -101,6 +103,8 @@ document.addEventListener("DOMContentLoaded", function() {
       self.focusName(true);
     };
 
+    self.restore = show;
+
     self.open = function() {
       // Start from whatever is turned on right now, same as the Profiles page does.
       show({ name: "", query: "", selected: root.exts.enabled.pluck() });
@@ -109,7 +113,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // Closes without keeping anything (used after Create).
     self.close = function() {
       self.isOpen(false);
-      forgetDraft();
     };
 
     // Did you type or tick anything?
@@ -128,36 +131,27 @@ document.addEventListener("DOMContentLoaded", function() {
     var closeKeepingDraft = function(withHint) {
       var d = currentDraft();
       self.isOpen(false);
-      forgetDraft();
       if(hasWork(d)) {
-        root.pushUndo("closing New profile", function() { show(d); }, true);
+        root.setUndo({ label: "closing New profile", type: "reopenDraft", data: d, quiet: true });
         if(withHint) root.toast("Closed. Press " + root.undoKey + " to bring it back.");
+      } else {
+        root.setUndo(prevUndo);
       }
     };
 
     self.cancel = function() { closeKeepingDraft(false); };
     self.dismiss = function() { closeKeepingDraft(true); };
 
-    // While the dialog is open, keep a copy in storage. If the whole popup
-    // closes (you clicked outside Chrome's popup), we can bring it back next time.
-    var forgetDraft = function() {
-      chrome.storage.local.remove("newProfileDraft");
-    };
-
+    // While the dialog is open (and you've typed or ticked something), it's the
+    // thing Cmd+Z brings back, even if the whole popup closes on you.
     ko.computed(function() {
       if(!self.isOpen()) return;
       var d = currentDraft();
-      d.touched = hasWork(d);
-      chrome.storage.local.set({ newProfileDraft: d });
-    });
-
-    chrome.storage.local.get("newProfileDraft", function(v) {
-      var d = v && v.newProfileDraft;
-      if(!d) return;
-      forgetDraft();
-      if(!d.touched) return; // you hadn't typed or ticked anything
-      root.pushUndo("closing New profile", function() { show(d); }, true);
-      root.toast("Your unfinished profile got closed. Press " + root.undoKey + " to bring it back.", 6000);
+      if(hasWork(d)) {
+        root.setUndo({ label: "closing New profile", type: "reopenDraft", data: d, quiet: true, pending: true });
+      } else {
+        root.setUndo(prevUndo);
+      }
     });
 
     // All / None apply to what the search is showing (everything if no search).
@@ -189,7 +183,6 @@ document.addEventListener("DOMContentLoaded", function() {
       }
 
       root.profiles.add(n, _(self.selected()).uniq());
-      var created = root.profiles.find(n);
       // Keep the list in the same order it loads in (reserved first, then A-Z).
       root.sortProfiles();
       root.profiles.save(function() {});
@@ -199,15 +192,7 @@ document.addEventListener("DOMContentLoaded", function() {
       self.close();
 
       // Undo: remove the profile again and reopen the dialog as it was.
-      root.pushUndo("creating " + n, function() {
-        var name = created.name();
-        var wasOn = root.isActive(name);
-        root.profiles.remove(created);
-        root.activeProfiles.remove(name);
-        root.expandedProfiles.remove(name);
-        if(wasOn) root.applyProfiles();
-        show(draft);
-      });
+      root.setUndo({ label: "creating " + n, type: "uncreate", data: { name: n, draft: draft } });
     };
 
     // Esc closes the dialog.
@@ -331,6 +316,17 @@ document.addEventListener("DOMContentLoaded", function() {
         // Inline rename state
         p.editing = ko.observable(false);
         p.draft = ko.observable("");
+        // While you type a new name, that's what Cmd+Z brings back if the popup
+        // closes before it's saved.
+        p.draft.subscribe(function(t) {
+          if(!p.editing()) return;
+          var txt = (t || "").trim();
+          if(txt && txt !== p.name()) {
+            self.setUndo({ label: "renaming " + p.name(), type: "renameDraft", data: { name: p.name(), text: t }, quiet: true, pending: true });
+          } else {
+            self.setUndo(p.prevUndo);
+          }
+        });
         p.focusEdit = ko.observable(false);
         p.renameError = ko.observable("");
         p.expanded = ko.pureComputed(function() {
@@ -361,23 +357,97 @@ document.addEventListener("DOMContentLoaded", function() {
         .value();
     }).extend({countable: null});
 
-    // Extensious: Cmd/Ctrl+Z undoes the last profile change.
+    // Extensious: Cmd/Ctrl+Z undoes your most recent profile change.
+    // Only the last action is remembered, and it's kept in storage so it
+    // still works after the popup closes and you open it again.
     self.undoKey = (navigator.platform.indexOf("Mac") > -1) ? "\u2318Z" : "Ctrl+Z";
-    self.undoStack = [];
+    self.lastUndo = null;
 
-    // label: shown as "Undid: <label>"; fn: puts things back.
-    // quiet: no toast (the action itself makes the result obvious).
-    self.pushUndo = function(label, fn, quiet) {
-      self.undoStack.push({ label: label, fn: fn, quiet: !!quiet });
-      if(self.undoStack.length > 30) self.undoStack.shift();
+    // rec = { label, type, data, quiet, pending } (or null to forget)
+    self.setUndo = function(rec) {
+      self.lastUndo = rec || null;
+      if(rec) chrome.storage.local.set({ lastUndo: rec });
+      else chrome.storage.local.remove("lastUndo");
+    };
+
+    chrome.storage.local.remove("newProfileDraft"); // old key from a previous version
+    chrome.storage.local.get("lastUndo", function(v) {
+      var r = v && v.lastUndo;
+      if(!r || self.lastUndo) return;
+      self.lastUndo = r;
+      if(r.pending) {
+        // The popup closed while you were in the middle of something.
+        r.pending = false;
+        self.setUndo(r);
+        self.toast((r.type === "renameDraft" ? "Your rename got interrupted." : "Your unfinished profile got closed.") +
+          " Press " + self.undoKey + " to bring it back.", 6000);
+      }
+    });
+
+    var setStatus = function(id, on) {
+      var e = self.exts.find(id);
+      if(e && e.status() !== on) e.status(on);
+    };
+
+    // Puts things back. Returns false if it can't (e.g. the profile is gone).
+    var runUndo = function(r) {
+      var d = r.data || {};
+      var p;
+      switch(r.type) {
+        case "reopenDraft":
+          self.newProfile.restore(d);
+          return true;
+        case "uncreate":
+          p = self.profiles.find(d.name);
+          if(p) {
+            var wasOn = self.isActive(d.name);
+            self.profiles.remove(p);
+            self.activeProfiles.remove(d.name);
+            self.expandedProfiles.remove(d.name);
+            if(wasOn) self.applyProfiles();
+          }
+          if(d.draft) self.newProfile.restore(d.draft);
+          return true;
+        case "rename":
+          p = self.profiles.find(d.from);
+          if(!p) return false;
+          var clash = _(self.profiles.items()).some(function(o) {
+            return o !== p && o.name().toUpperCase() == d.to.toUpperCase();
+          });
+          if(clash) return false;
+          renameProfile(p, d.to);
+          return true;
+        case "renameDraft":
+          p = self.profiles.find(d.name);
+          if(!p) return false;
+          self.startRename(p);
+          p.draft(d.text);
+          var input = document.querySelector("input.rename-input");
+          if(input) input.setSelectionRange(d.text.length, d.text.length);
+          return true;
+        case "unadd":
+          p = self.profiles.find(d.profile);
+          if(!p) return false;
+          p.items.remove(d.id);
+          setStatus(d.id, d.wasOn);
+          return true;
+        case "unremove":
+          p = self.profiles.find(d.profile);
+          if(!p) return false;
+          if(!_(p.items()).contains(d.id)) p.items.push(d.id);
+          setStatus(d.id, d.wasOn);
+          return true;
+      }
+      return false;
     };
 
     self.undo = function() {
-      var a = self.undoStack.pop();
-      if(!a) { self.toast("Nothing to undo."); return; }
-      a.fn();
+      var r = self.lastUndo;
+      if(!r) { self.toast("Nothing to undo."); return; }
+      self.setUndo(null);
+      if(runUndo(r) === false) { self.toast("Couldn't undo that, things changed since."); return; }
       self.profiles.save(function() {});
-      if(!a.quiet) self.toast("Undid " + a.label + ".");
+      if(!r.quiet) self.toast("Undid " + r.label + ".");
       else self.toastShown(false);
     };
 
@@ -424,6 +494,7 @@ document.addEventListener("DOMContentLoaded", function() {
     self.noop = function() { return true; };
 
     self.startRename = function(p) {
+      p.prevUndo = self.lastUndo;
       p.draft(p.name());
       p.renameError("");
       p.editing(true);
@@ -447,10 +518,10 @@ document.addEventListener("DOMContentLoaded", function() {
       var n = (p.draft() || "").trim();
       var fail = function(msg) {
         if(showErrors) { p.renameError(msg); p.focusEdit(true); }
-        else { p.editing(false); } // clicked away with a bad name: keep the old one
+        else { p.editing(false); self.setUndo(p.prevUndo); } // clicked away with a bad name: keep the old one
         return false;
       };
-      if(!n || n === oldName) { p.editing(false); return true; }
+      if(!n || n === oldName) { p.editing(false); self.setUndo(p.prevUndo); return true; }
       if(n.startsWith("__")) return fail("Names can't start with two underscores.");
       var taken = _(self.profiles.items()).some(function(o) {
         return o !== p && o.name().toUpperCase() == n.toUpperCase();
@@ -459,12 +530,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
       renameProfile(p, n);
       p.editing(false);
-      self.pushUndo("renaming " + oldName, function() {
-        var clash = _(self.profiles.items()).some(function(o) {
-          return o !== p && o.name().toUpperCase() == oldName.toUpperCase();
-        });
-        if(!clash) renameProfile(p, oldName);
-      });
+      self.setUndo({ label: "renaming " + oldName, type: "rename", data: { from: n, to: oldName } });
       return true;
     };
 
@@ -479,7 +545,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     self.renameKey = function(p, e) {
       if(e.key === "Enter") { e.preventDefault(); commitRename(p, true); return false; }
-      if(e.key === "Escape") { e.preventDefault(); e.stopPropagation(); p.editing(false); return false; }
+      if(e.key === "Escape") { e.preventDefault(); e.stopPropagation(); p.editing(false); self.setUndo(p.prevUndo); return false; }
       if(p.renameError()) p.renameError("");
       return true; // let normal typing through
     };
@@ -487,6 +553,13 @@ document.addEventListener("DOMContentLoaded", function() {
     self.renameBlur = function(p) {
       commitRename(p, false);
     };
+
+    // If the popup closes while you're renaming, keep what you typed.
+    window.addEventListener("pagehide", function() {
+      _(self.profiles.items()).each(function(p) {
+        if(p.editing && p.editing()) commitRename(p, false);
+      });
+    });
 
     // Turn on exactly what the active profiles (plus Always On) contain,
     // and turn everything else off. Overlapping extensions are simply on.

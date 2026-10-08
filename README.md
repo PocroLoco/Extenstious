@@ -7,7 +7,7 @@ A fork of [Extensity](https://github.com/sergiokas/Extensity) by Sergio Kaszczys
 - Each profile in the popup shows how many extensions it has, with an arrow to show/hide the list (remembers what you left open).
 - A **+** on the Profiles bar creates a new profile right in the popup — pick a name, search/tick the extensions, done.
 - Hover a profile and click the pencil next to its name to rename it in place.
-- **Cmd/Ctrl+Z** undoes your last profile change: a New profile dialog you clicked out of (even if the whole popup closed), a rename, a new profile, or a drag in/out.
+- **Cmd/Ctrl+Z** undoes your most recent profile change: a New profile dialog you clicked out of, a rename, a new profile, or a drag in/out. It's remembered even after the popup closes, so you can reopen Extensious and hit Cmd+Z. (One level of undo.)
 - Drag an extension from the list onto a profile to add it ("Add to Sales"), or drag it out of a profile's list to remove it ("Remove from Sales"). If that profile is the one that's on, the extension gets turned on/off to match.
 - New look: violet color scheme and a new icon.
 
