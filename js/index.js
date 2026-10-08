@@ -58,6 +58,32 @@ document.addEventListener("DOMContentLoaded", function() {
     self.error = ko.observable("");
     self.focusName = ko.observable(false);
 
+    // Search box to filter the extension list by name.
+    self.query = ko.observable("");
+
+    self.filtered = ko.pureComputed(function() {
+      var q = self.query().trim().toUpperCase();
+      var all = root.exts.extensions();
+      if(!q) return all;
+      return _(all).filter(function(e) { return e.name().toUpperCase().indexOf(q) !== -1; });
+    });
+
+    self.noMatches = ko.pureComputed(function() {
+      return self.filtered().length === 0;
+    });
+
+    var filteredIds = function() {
+      return _(self.filtered()).map(function(e) { return e.id(); });
+    };
+
+    self.searchKey = function(vm, e) {
+      // Enter in the search box shouldn't create the profile.
+      if(e.key === "Enter") { e.preventDefault(); return false; }
+      // First Esc clears the search, the next one closes the dialog.
+      if(e.key === "Escape" && self.query()) { e.preventDefault(); e.stopPropagation(); self.query(""); return false; }
+      return true;
+    };
+
     self.selectedCount = ko.pureComputed(function() {
       var n = self.selected().length;
       return "(" + n + " selected)";
@@ -66,6 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
     self.open = function() {
       self.name("");
       self.error("");
+      self.query("");
       // Start from whatever is turned on right now, same as the Profiles page does.
       self.selected(root.exts.enabled.pluck().slice());
       self.isOpen(true);
@@ -76,12 +103,13 @@ document.addEventListener("DOMContentLoaded", function() {
       self.isOpen(false);
     };
 
+    // All / None apply to what the search is showing (everything if no search).
     self.selectAll = function() {
-      self.selected(root.exts.extensions.pluck().slice());
+      self.selected(_.union(self.selected(), filteredIds()));
     };
 
     self.selectNone = function() {
-      self.selected([]);
+      self.selected(_.difference(self.selected(), filteredIds()));
     };
 
     self.create = function() {
@@ -105,11 +133,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
       root.profiles.add(n, _(self.selected()).uniq());
       // Keep the list in the same order it loads in (reserved first, then A-Z).
-      root.profiles.items.sort(function(a, b) {
-        var ka = (a.name().startsWith("__") ? " " : "") + a.name().toUpperCase();
-        var kb = (b.name().startsWith("__") ? " " : "") + b.name().toUpperCase();
-        return ka < kb ? -1 : (ka > kb ? 1 : 0);
-      });
+      root.sortProfiles();
       root.profiles.save(function() {});
       // Show the new profile opened so you can see what's in it.
       if(!_(root.expandedProfiles()).contains(n)) root.expandedProfiles.push(n);
@@ -234,6 +258,11 @@ document.addEventListener("DOMContentLoaded", function() {
         p.active = ko.pureComputed(function() {
           return self.isActive(p.name());
         });
+        // Inline rename state
+        p.editing = ko.observable(false);
+        p.draft = ko.observable("");
+        p.focusEdit = ko.observable(false);
+        p.renameError = ko.observable("");
         p.expanded = ko.pureComputed(function() {
           return _(self.expandedProfiles()).contains(p.name());
         });
@@ -268,6 +297,72 @@ document.addEventListener("DOMContentLoaded", function() {
     self.emptyItems = ko.pureComputed(function() {
       return self.listedApps.none() && self.listedExtensions.none();
     });
+
+    // Extensious: keep profiles in load order (reserved first, then A-Z).
+    self.sortProfiles = function() {
+      self.profiles.items.sort(function(a, b) {
+        var ka = (a.name().startsWith("__") ? " " : "") + a.name().toUpperCase();
+        var kb = (b.name().startsWith("__") ? " " : "") + b.name().toUpperCase();
+        return ka < kb ? -1 : (ka > kb ? 1 : 0);
+      });
+    };
+
+    // Extensious: rename a profile right in the popup (pencil next to the name).
+    self.noop = function() { return true; };
+
+    self.startRename = function(p) {
+      p.draft(p.name());
+      p.renameError("");
+      p.editing(true);
+      p.focusEdit(true);
+      // Select the old name so you can just type over it.
+      // (Knockout renders the input synchronously, so it's already there.)
+      var input = document.querySelector("input.rename-input");
+      if(input) { input.focus(); input.select(); }
+    };
+
+    var replaceName = function(arr, oldName, newName) {
+      if(_(arr()).contains(oldName)) {
+        arr(_(arr()).map(function(n) { return n === oldName ? newName : n; }));
+      }
+    };
+
+    // Returns true if the rename was applied (or nothing changed).
+    var commitRename = function(p, showErrors) {
+      if(!p.editing()) return true;
+      var oldName = p.name();
+      var n = (p.draft() || "").trim();
+      var fail = function(msg) {
+        if(showErrors) { p.renameError(msg); p.focusEdit(true); }
+        else { p.editing(false); } // clicked away with a bad name: keep the old one
+        return false;
+      };
+      if(!n || n === oldName) { p.editing(false); return true; }
+      if(n.startsWith("__")) return fail("Names can't start with two underscores.");
+      var taken = _(self.profiles.items()).some(function(o) {
+        return o !== p && o.name().toUpperCase() == n.toUpperCase();
+      });
+      if(taken) return fail("You already have a profile called \"" + n + "\".");
+
+      p.name(n);
+      replaceName(self.activeProfiles, oldName, n);
+      replaceName(self.expandedProfiles, oldName, n);
+      self.sortProfiles();
+      self.profiles.save(function() {});
+      p.editing(false);
+      return true;
+    };
+
+    self.renameKey = function(p, e) {
+      if(e.key === "Enter") { e.preventDefault(); commitRename(p, true); return false; }
+      if(e.key === "Escape") { e.preventDefault(); e.stopPropagation(); p.editing(false); return false; }
+      if(p.renameError()) p.renameError("");
+      return true; // let normal typing through
+    };
+
+    self.renameBlur = function(p) {
+      commitRename(p, false);
+    };
 
     // Turn on exactly what the active profiles (plus Always On) contain,
     // and turn everything else off. Overlapping extensions are simply on.

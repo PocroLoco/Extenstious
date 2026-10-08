@@ -55,13 +55,23 @@
 					<i class="fa fa-lightbulb-o" alt="profile" data-sbind="visible: !active() && name()=='__always_on'"></i>
 					<i class="fa fa-star" alt="profile" data-sbind="visible: !active() && name()=='__favorites'"></i>
 					<i class="fa fa-user-circle-o" alt="profile" data-sbind="visible: !active() && !reserved()"></i>
-					<span class="profile-name" data-sbind="text: short_name"></span>
+					<!-- Extensious: name + pencil to rename it right here -->
+					<!-- ko ifnot: editing -->
+					<span class="name-wrap">
+						<span class="profile-name" data-sbind="text: short_name"></span>
+						<a href="#" class="profile-edit" title="Rename" data-sbind="visible: !reserved(), click: $parent.startRename, clickBubble: false"><i class="fa fa-pencil"></i></a>
+					</span>
+					<!-- /ko -->
+					<!-- ko if: editing -->
+					<input type="text" class="rename-input" maxlength="40" data-sbind="textInput: draft, hasFocus: focusEdit, css: {invalid: renameError}, click: $parent.noop, clickBubble: false, event: {keydown: $parent.renameKey, blur: $parent.renameBlur}" />
+					<!-- /ko -->
 					<!-- Extensious: show/hide this profile's extensions -->
 					<a href="#" class="profile-toggle" title="Show/hide extensions" data-sbind="click: $parent.toggleExpanded, clickBubble: false, css: {open: expanded}">
 						<span class="count" data-sbind="text: count"></span>
 						<i class="fa fa-chevron-down"></i>
 					</a>
 				</div>
+				<p class="rename-error" data-sbind="visible: editing() && renameError(), text: renameError"></p>
 				<!-- Extensious: extensions in this profile -->
 				<ul class="profile-items" data-sbind="visible: expanded, foreach: extensions">
 					<li data-sbind="click: $parent.toggleItem, clickBubble: false, css: {disabled: disabled}"><img width="14px" height="14px" data-sbind="attr:{src:icon}" /> <span data-sbind="text: short_name"></span></li>
@@ -116,7 +126,12 @@
 			<span>Extensions <small data-sbind="text: newProfile.selectedCount"></small></span>
 			<span><a href="#" data-sbind="click: newProfile.selectAll">All</a> &middot; <a href="#" data-sbind="click: newProfile.selectNone">None</a></span>
 		</div>
-		<ul class="pick-list" data-sbind="foreach: exts.extensions">
+		<div class="pick-search">
+			<i class="fa fa-search"></i>
+			<input type="text" placeholder="Search extensions" data-sbind="textInput: newProfile.query, event: {keydown: newProfile.searchKey}" />
+		</div>
+		<p class="pick-empty" data-sbind="visible: newProfile.noMatches">No extensions match.</p>
+		<ul class="pick-list" data-sbind="visible: !newProfile.noMatches(), foreach: newProfile.filtered">
 			<li><label>
 				<input type="checkbox" data-sbind="value: id, checked: $parent.newProfile.selected" />
 				<img width="16px" height="16px" data-sbind="attr:{src:icon}" />
