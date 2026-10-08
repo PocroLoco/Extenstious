@@ -86,9 +86,15 @@ var setupProfileDragAndDrop = function(vm) {
 
   var drop = function() {
     var ext = drag.ext;
+    var wasOn = ext.status();
+    var putBack = function() { if(ext.status() !== wasOn) ext.status(wasOn); };
     if(drag.action === "add") {
       var p = drag.target.profile;
       p.items.push(ext.id());
+      vm.pushUndo("adding " + ext.short_name() + " to " + p.short_name(), function() {
+        p.items.remove(ext.id());
+        putBack();
+      });
       // If that profile is on, turn the extension on too.
       if(vm.isActive(p.name()) && !ext.status()) ext.enable();
       save();
@@ -96,6 +102,10 @@ var setupProfileDragAndDrop = function(vm) {
     } else if(drag.action === "remove") {
       var from = drag.from.profile;
       from.items.remove(ext.id());
+      vm.pushUndo("removing " + ext.short_name() + " from " + from.short_name(), function() {
+        if(!_(from.items()).contains(ext.id())) from.items.push(ext.id());
+        putBack();
+      });
       // If that profile is on, turn the extension off too, unless another
       // active profile (or Always On) still wants it.
       if(vm.isActive(from.name()) && ext.status() && !vm.wantedByActiveProfiles(ext.id())) ext.disable();

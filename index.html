@@ -117,7 +117,7 @@
 <!-- Extensious: create a profile without leaving the popup -->
 <!-- ko if: newProfile.isOpen -->
 <div class="modal-layer">
-	<div class="modal-backdrop" data-sbind="click: newProfile.close"></div>
+	<div class="modal-backdrop" data-sbind="click: newProfile.dismiss"></div>
 	<form class="modal" data-sbind="submit: newProfile.create">
 		<h2>New profile</h2>
 		<input type="text" class="profile-name-input" maxlength="40" placeholder="Name it, e.g. Sales" data-sbind="textInput: newProfile.name, hasFocus: newProfile.focusName" />
@@ -139,12 +139,15 @@
 			</label></li>
 		</ul>
 		<div class="modal-actions">
-			<button type="button" class="btn ghost" data-sbind="click: newProfile.close">Cancel</button>
+			<button type="button" class="btn ghost" data-sbind="click: newProfile.cancel">Cancel</button>
 			<button type="submit" class="btn primary">Create</button>
 		</div>
 	</form>
 </div>
 <!-- /ko -->
+
+<!-- Extensious: little message at the bottom (undo hints) -->
+<div class="toast" data-sbind="css: {show: toastShown}, text: toastText"></div>
 
 <!-- Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912 -->
 <div id="workaround-307912" style="display: none; height: 1px;"></div>

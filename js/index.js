@@ -89,19 +89,76 @@ document.addEventListener("DOMContentLoaded", function() {
       return "(" + n + " selected)";
     });
 
-    self.open = function() {
-      self.name("");
+    var initialSelected = [];
+
+    var show = function(draft) {
+      self.name(draft.name || "");
       self.error("");
-      self.query("");
-      // Start from whatever is turned on right now, same as the Profiles page does.
-      self.selected(root.exts.enabled.pluck().slice());
+      self.query(draft.query || "");
+      self.selected((draft.selected || []).slice());
+      initialSelected = root.exts.enabled.pluck().slice();
       self.isOpen(true);
       self.focusName(true);
     };
 
+    self.open = function() {
+      // Start from whatever is turned on right now, same as the Profiles page does.
+      show({ name: "", query: "", selected: root.exts.enabled.pluck() });
+    };
+
+    // Closes without keeping anything (used after Create).
     self.close = function() {
       self.isOpen(false);
+      forgetDraft();
     };
+
+    // Did you type or tick anything?
+    var hasWork = function(d) {
+      return (d.name || "").trim() !== "" ||
+        _.difference(d.selected, initialSelected).length > 0 ||
+        _.difference(initialSelected, d.selected).length > 0;
+    };
+
+    var currentDraft = function() {
+      return { name: self.name(), query: self.query(), selected: self.selected().slice() };
+    };
+
+    // Closing without creating (Cancel, clicking outside, Esc) keeps what you had,
+    // so Cmd/Ctrl+Z brings the dialog back exactly as you left it.
+    var closeKeepingDraft = function(withHint) {
+      var d = currentDraft();
+      self.isOpen(false);
+      forgetDraft();
+      if(hasWork(d)) {
+        root.pushUndo("closing New profile", function() { show(d); }, true);
+        if(withHint) root.toast("Closed. Press " + root.undoKey + " to bring it back.");
+      }
+    };
+
+    self.cancel = function() { closeKeepingDraft(false); };
+    self.dismiss = function() { closeKeepingDraft(true); };
+
+    // While the dialog is open, keep a copy in storage. If the whole popup
+    // closes (you clicked outside Chrome's popup), we can bring it back next time.
+    var forgetDraft = function() {
+      chrome.storage.local.remove("newProfileDraft");
+    };
+
+    ko.computed(function() {
+      if(!self.isOpen()) return;
+      var d = currentDraft();
+      d.touched = hasWork(d);
+      chrome.storage.local.set({ newProfileDraft: d });
+    });
+
+    chrome.storage.local.get("newProfileDraft", function(v) {
+      var d = v && v.newProfileDraft;
+      if(!d) return;
+      forgetDraft();
+      if(!d.touched) return; // you hadn't typed or ticked anything
+      root.pushUndo("closing New profile", function() { show(d); }, true);
+      root.toast("Your unfinished profile got closed. Press " + root.undoKey + " to bring it back.", 6000);
+    });
 
     // All / None apply to what the search is showing (everything if no search).
     self.selectAll = function() {
@@ -132,19 +189,32 @@ document.addEventListener("DOMContentLoaded", function() {
       }
 
       root.profiles.add(n, _(self.selected()).uniq());
+      var created = root.profiles.find(n);
       // Keep the list in the same order it loads in (reserved first, then A-Z).
       root.sortProfiles();
       root.profiles.save(function() {});
       // Show the new profile opened so you can see what's in it.
       if(!_(root.expandedProfiles()).contains(n)) root.expandedProfiles.push(n);
+      var draft = currentDraft();
       self.close();
+
+      // Undo: remove the profile again and reopen the dialog as it was.
+      root.pushUndo("creating " + n, function() {
+        var name = created.name();
+        var wasOn = root.isActive(name);
+        root.profiles.remove(created);
+        root.activeProfiles.remove(name);
+        root.expandedProfiles.remove(name);
+        if(wasOn) root.applyProfiles();
+        show(draft);
+      });
     };
 
     // Esc closes the dialog.
     document.addEventListener("keydown", function(e) {
       if(e.key === "Escape" && self.isOpen()) {
         e.preventDefault();
-        self.close();
+        self.dismiss();
       }
     });
   };
@@ -291,6 +361,49 @@ document.addEventListener("DOMContentLoaded", function() {
         .value();
     }).extend({countable: null});
 
+    // Extensious: Cmd/Ctrl+Z undoes the last profile change.
+    self.undoKey = (navigator.platform.indexOf("Mac") > -1) ? "\u2318Z" : "Ctrl+Z";
+    self.undoStack = [];
+
+    // label: shown as "Undid: <label>"; fn: puts things back.
+    // quiet: no toast (the action itself makes the result obvious).
+    self.pushUndo = function(label, fn, quiet) {
+      self.undoStack.push({ label: label, fn: fn, quiet: !!quiet });
+      if(self.undoStack.length > 30) self.undoStack.shift();
+    };
+
+    self.undo = function() {
+      var a = self.undoStack.pop();
+      if(!a) { self.toast("Nothing to undo."); return; }
+      a.fn();
+      self.profiles.save(function() {});
+      if(!a.quiet) self.toast("Undid " + a.label + ".");
+      else self.toastShown(false);
+    };
+
+    // Small message at the bottom of the popup.
+    self.toastText = ko.observable("");
+    self.toastShown = ko.observable(false);
+    var toastTimer = null;
+    self.toast = function(msg, ms) {
+      self.toastText(msg);
+      self.toastShown(true);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { self.toastShown(false); }, ms || 3500);
+    };
+
+    document.addEventListener("keydown", function(e) {
+      if(!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+      if(e.key !== "z" && e.key !== "Z") return;
+      var t = e.target;
+      var inField = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA");
+      // Inside a text box you're typing in, Cmd+Z undoes your typing like normal.
+      if(inField && (t.value || (t.closest && t.closest(".modal, .profile-row")))) return;
+      if(self.newProfile.isOpen()) return;
+      e.preventDefault();
+      self.undo();
+    });
+
     // Extensious: "+" on the Profiles bar opens this small create-profile dialog.
     self.newProfile = new NewProfileViewModel(self);
 
@@ -344,13 +457,24 @@ document.addEventListener("DOMContentLoaded", function() {
       });
       if(taken) return fail("You already have a profile called \"" + n + "\".");
 
-      p.name(n);
-      replaceName(self.activeProfiles, oldName, n);
-      replaceName(self.expandedProfiles, oldName, n);
+      renameProfile(p, n);
+      p.editing(false);
+      self.pushUndo("renaming " + oldName, function() {
+        var clash = _(self.profiles.items()).some(function(o) {
+          return o !== p && o.name().toUpperCase() == oldName.toUpperCase();
+        });
+        if(!clash) renameProfile(p, oldName);
+      });
+      return true;
+    };
+
+    var renameProfile = function(p, newName) {
+      var oldName = p.name();
+      p.name(newName);
+      replaceName(self.activeProfiles, oldName, newName);
+      replaceName(self.expandedProfiles, oldName, newName);
       self.sortProfiles();
       self.profiles.save(function() {});
-      p.editing(false);
-      return true;
     };
 
     self.renameKey = function(p, e) {
