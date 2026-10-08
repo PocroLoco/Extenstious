@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   };
 
-  // Extentious: in-popup "New profile" dialog.
+  // Extensious: in-popup "New profile" dialog.
   var NewProfileViewModel = function(root) {
     var self = this;
 
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .filter(filterFn);
     }).extend({countable: null});
 
-    // Extentious: which profiles have their extension list open (remembered).
+    // Extensious: which profiles have their extension list open (remembered).
     self.expandedProfiles = ko.observableArray().extend({persistable: "expandedProfiles"});
 
     self.toggleExpanded = function(p) {
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     };
 
-    // Extentious: give each profile a sorted list of the installed
+    // Extensious: give each profile a sorted list of the installed
     // extensions/apps it contains, so the popup can show them under the profile.
     var withExtensions = function(p) {
       if(!p.extensions) {
@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .value();
     }).extend({countable: null});
 
-    // Extentious: "+" on the Profiles bar opens this small create-profile dialog.
+    // Extensious: "+" on the Profiles bar opens this small create-profile dialog.
     self.newProfile = new NewProfileViewModel(self);
 
     self.emptyItems = ko.pureComputed(function() {
@@ -288,7 +288,7 @@ document.addEventListener("DOMContentLoaded", function() {
     vm = new ExtensityViewModel();
     ko.bindingProvider.instance = new ko.secureBindingsProvider({});
     ko.applyBindings(vm, document.body);
-    setupProfileDragAndDrop(vm); // Extentious: drag extensions into/out of profiles
+    setupProfileDragAndDrop(vm); // Extensious: drag extensions into/out of profiles
   });
 
   // Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912

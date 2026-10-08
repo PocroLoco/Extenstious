@@ -1,4 +1,4 @@
-// Extentious: drag extensions into and out of profiles in the popup.
+// Extensious: drag extensions into and out of profiles in the popup.
 //
 // - Drag an extension from the list onto a profile  -> "Add to <profile>"
 // - Drag an extension out of a profile's open list  -> "Remove from <profile>"

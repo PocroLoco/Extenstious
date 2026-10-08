@@ -1,5 +1,5 @@
 {
-  "name": "Extentious",
+  "name": "Extensious",
   "version": "1.14.0.1",
   "manifest_version": 3,
   "description": "Quickly enable/disable Chrome extensions, and see what is in each profile. Fork of Extensity.",
@@ -11,7 +11,7 @@
   },
   "action": {
     "default_icon": "images/iconbar.png",
-    "default_title": "Extentious",
+    "default_title": "Extensious",
     "default_popup": "index.html"
   },
   "background": {
