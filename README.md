@@ -3,6 +3,7 @@
 A fork of [Extensity](https://github.com/sergiokas/Extensity) by Sergio Kaszczyszyn.
 
 **What's different:**
+- Several profiles can be on at once: click a profile to turn it on/off. Extensions in more than one active profile just stay on.
 - Each profile in the popup shows how many extensions it has, with an arrow to show/hide the list (remembers what you left open).
 - A **+** on the Profiles bar creates a new profile right in the popup — pick a name and the extensions, done.
 - Drag an extension from the list onto a profile to add it ("Add to Sales"), or drag it out of a profile's list to remove it ("Remove from Sales"). If that profile is the one that's on, the extension gets turned on/off to match.

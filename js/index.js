@@ -134,7 +134,20 @@ document.addEventListener("DOMContentLoaded", function() {
     self.dismissals = new DismissalsCollection();
     self.switch = new SwitchViewModel(self.exts, self.profiles, self.opts);
     self.search = new SearchViewModel();
-    self.activeProfile = ko.observable().extend({persistable: "activeProfile"});
+    // Extensious: several profiles can be on at the same time.
+    self.activeProfiles = ko.observableArray([]);
+    chrome.storage.sync.get(["activeProfiles", "activeProfile"], function(v) {
+      // Carry over the single active profile from older versions.
+      var names = v.activeProfiles || (v.activeProfile ? [v.activeProfile] : []);
+      self.activeProfiles(names);
+      self.activeProfiles.subscribe(function(val) {
+        chrome.storage.sync.set({activeProfiles: val});
+      });
+    });
+
+    self.isActive = function(name) {
+      return _(self.activeProfiles()).contains(name);
+    };
 
     var filterFn = function(i) {
       // Filtering function for search box
@@ -218,6 +231,9 @@ document.addEventListener("DOMContentLoaded", function() {
         p.count = ko.pureComputed(function() {
           return p.extensions().length;
         });
+        p.active = ko.pureComputed(function() {
+          return self.isActive(p.name());
+        });
         p.expanded = ko.pureComputed(function() {
           return _(self.expandedProfiles()).contains(p.name());
         });
@@ -253,23 +269,39 @@ document.addEventListener("DOMContentLoaded", function() {
       return self.listedApps.none() && self.listedExtensions.none();
     });
 
-    self.setProfile = function(p) {
-      self.activeProfile(p.name());
-      // Profile items, plus always-on items
-      var ids = _.union(p.items(), self.profiles.always_on().items());
-      var to_enable = _.intersection(self.exts.disabled.pluck(),ids);
+    // Turn on exactly what the active profiles (plus Always On) contain,
+    // and turn everything else off. Overlapping extensions are simply on.
+    self.applyProfiles = function() {
+      var active = _(self.profiles.items()).filter(function(p) { return self.isActive(p.name()); });
+      var ids = _.union.apply(_, _(active).map(function(p) { return p.items(); })
+        .concat([self.profiles.always_on().items()]));
+      var to_enable = _.intersection(self.exts.disabled.pluck(), ids);
       var to_disable = _.difference(self.exts.enabled.pluck(), ids);
       _(to_enable).each(function(id) { self.exts.find(id).enable() });
       _(to_disable).each(function(id) { self.exts.find(id).disable() });
     };
 
-    self.unsetProfile = function() {
-      self.activeProfile(undefined);
+    // Clicking a profile turns it on or off.
+    self.toggleProfile = function(p) {
+      if(self.isActive(p.name())) {
+        self.activeProfiles.remove(p.name());
+      } else {
+        self.activeProfiles.push(p.name());
+      }
+      self.applyProfiles();
     };
 
+    // Is this extension wanted by any active profile (or Always On)?
+    self.wantedByActiveProfiles = function(id) {
+      if(_(self.profiles.always_on().items()).contains(id)) return true;
+      return _(self.profiles.items()).some(function(p) {
+        return self.isActive(p.name()) && _(p.items()).contains(id);
+      });
+    };
+
+    // Turning a single extension on/off by hand leaves your profiles on.
     self.toggleExtension = function(e) {
       e.toggle();
-      self.unsetProfile();
     }
 
     // Private helper functions

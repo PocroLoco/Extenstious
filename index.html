@@ -49,12 +49,12 @@
 		</h1>
 		<p class="no-profiles" data-sbind="visible: listedProfiles.none">No profiles yet. Hit <i class="fa fa-plus"></i> to make one.</p>
 		<ul data-sbind="foreach: listedProfiles">
-			<li class="app profile" data-sbind="click: $parent.setProfile">
+			<li class="app profile" data-sbind="click: $parent.toggleProfile, css: {on: active}">
 				<div class="profile-row">
-					<i class="fa fa-check" alt="active" data-sbind="visible: name() == $parent.activeProfile()"></i>
-					<i class="fa fa-lightbulb-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__always_on'"></i>
-					<i class="fa fa-star" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__favorites'"></i>
-					<i class="fa fa-user-circle-o" alt="profile" data-sbind="visible: name()!=$parent.activeProfile() && !reserved()"></i>
+					<i class="fa fa-check" alt="active" data-sbind="visible: active"></i>
+					<i class="fa fa-lightbulb-o" alt="profile" data-sbind="visible: !active() && name()=='__always_on'"></i>
+					<i class="fa fa-star" alt="profile" data-sbind="visible: !active() && name()=='__favorites'"></i>
+					<i class="fa fa-user-circle-o" alt="profile" data-sbind="visible: !active() && !reserved()"></i>
 					<span class="profile-name" data-sbind="text: short_name"></span>
 					<!-- Extensious: show/hide this profile's extensions -->
 					<a href="#" class="profile-toggle" title="Show/hide extensions" data-sbind="click: $parent.toggleExpanded, clickBubble: false, css: {open: expanded}">

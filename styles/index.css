@@ -676,3 +676,8 @@ section#content li.profile.dropped {
 section#content img {
 	-webkit-user-drag: none;
 }
+
+/* Profiles that are on: bold name (several can be on at once) */
+section#content li.profile.on .profile-name {
+	font-weight: bold;
+}
